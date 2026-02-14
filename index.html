@@ -89,9 +89,9 @@ border:none;
   position: absolute;
   width: 64px;
   height: 64px;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  left: 0;
+  top: 0;
+  transform:none;
   pointer-events: none;   /* 主人公をタップしても反応しない */
 }
  </style>
@@ -111,7 +111,7 @@ border:none;
  <div id="p2" class="page">
  <button class="imgBtn nav1 floatBtn glowBtn spriteBtn" data-g="1" aria-label="Page1"></button>
    <div id="field">
-    <img id="player" src="assets/player/player_normal.png">
+    <img id="player" src="assets/player/char1_normal1.png">
   </div>
   <button data-g="3">3</button>
   <button data-g="4">4</button>
@@ -134,6 +134,22 @@ border:none;
 
  <div id="p4" class="page">
 <button class="imgBtn nav1 floatBtn glowBtn spriteBtn" data-g="1" aria-label="Page1"></button>
+<div style="margin-top:12px; padding:12px; border:1px solid #fff; border-radius:10px; max-width:360px;">
+  <h3>Page4</h3>
+
+  <div style="margin:8px 0;">
+    <label for="bgmBattleSelect">Page2 戦闘BGM：</label><br>
+    <select id="bgmBattleSelect">
+      <option value="random">ランダムループ（3曲）</option>
+      <option value="1">1曲目をループ</option>
+      <option value="2">2曲目をループ</option>
+      <option value="3">3曲目をループ</option>
+    </select>
+  </div>
+
+  <button id="bgmToggle">BGM: ON</button>
+</div>
+
   <button data-g="2">2</button>
   <button data-g="3">3</button>
   <button data-g="4">4</button>
@@ -165,7 +181,69 @@ let playerX = 0;
 let playerY = 0;
 let targetX = 0;
 let targetY = 0;
+let playerCX = 0, playerCY = 0;   // プレイヤー中心
+let targetCX = 0, targetCY = 0;   // 目標中心
 let boostFrames = 0;
+
+// ===== BGM Manager =====
+const BGM = {
+  enabled: true,
+  audio: new Audio(),
+  currentSrc: "",
+  battleMode: "random", // "random" or "1"/"2"/"3"
+  battleList: [
+    "assets/audio/bgm_battle_01.mp3",
+    "assets/audio/bgm_battle_02.mp3",
+    "assets/audio/bgm_battle_03.mp3",
+  ],
+  title: "assets/audio/bgm_title.mp3",
+  menu:  "assets/audio/bgm_menu.mp3",
+};
+
+BGM.audio.volume = 0.5; // 0.0〜1.0 好きに調整
+
+function bgmPlay(src, loop=true){
+  if(!BGM.enabled) return;
+
+  if(BGM.currentSrc !== src){
+    BGM.audio.pause();
+    BGM.audio.src = src;
+    BGM.currentSrc = src;
+  }
+  BGM.audio.loop = loop;
+
+  // モバイル対策：再生がブロックされる場合があるので catch
+  BGM.audio.play().catch(()=>{ /* 初回ジェスチャーが必要な時は無視 */ });
+}
+
+function bgmStop(){
+  BGM.audio.pause();
+}
+
+function pickRandomBattle(){
+  const i = Math.floor(Math.random() * BGM.battleList.length);
+  return BGM.battleList[i];
+}
+
+function applyBattleBgm(){
+  if(BGM.battleMode === "random"){
+    bgmPlay(pickRandomBattle(), false); // endedで次を選ぶ
+  }else{
+    const idx = Number(BGM.battleMode) - 1;
+    bgmPlay(BGM.battleList[idx], true);
+  }
+}
+
+// ランダムループ用：曲が終わったら次へ
+BGM.audio.addEventListener("ended", ()=>{
+  if(!BGM.enabled) return;
+  if(!document.getElementById("p2").classList.contains("active")) return;
+  if(BGM.battleMode !== "random") return;
+
+  bgmPlay(pickRandomBattle(), false);
+});
+
+
 
 /* ---------------- キャラ切替 ---------------- */
 
@@ -182,29 +260,29 @@ function selectChar(name){
 
 function initPlayerPosition(){
 
-  playerX = field.clientWidth / 2;
-  playerY = field.clientHeight * 0.8;  // 中央より少し下
+  playerCX = field.clientWidth / 2;
+  playerCY = field.clientHeight * 0.8;  // 中央より少し下
 
-  targetX = playerX;
-  targetY = playerY;
+  targetCX = playerCX;
+  targetCY = playerCY;
 
-  player.style.left = playerX + "px";
-  player.style.top  = playerY + "px";
+ player.style.left = (playerCX - player.offsetWidth/2) + "px";
+  player.style.top  = (playerCY - player.offsetHeight/2) + "px";
 }
-
 
 
 
 
 /* ---------------- 移動処理 ---------------- */
 
+
 function setTarget(x, y){
-
-  const maxX = field.clientWidth - player.offsetWidth;
-  const maxY = field.clientHeight - player.offsetHeight;
-
-  targetX = Math.max(0, Math.min(x - player.offsetWidth / 2, maxX));
-  targetY = Math.max(0, Math.min(y - player.offsetHeight / 2, maxY));
+  const halfW = player.offsetWidth / 2;
+  const halfH = player.offsetHeight / 2;
+  const pad = 8; // 端から8pxは空ける
+  // 中心が行ける範囲（左右上下を同じ条件にする）
+  targetCX = Math.max(halfW, Math.min(x, field.clientWidth  - halfW));
+  targetCY = Math.max(halfH, Math.min(y, field.clientHeight - halfH));
 
   boostFrames = 8;  // 最初の8フレームだけ速くする（調整OK）
 }
@@ -218,23 +296,31 @@ function ui(){
   localStorage.setItem("save", JSON.stringify(d));
 }
 
-/* ---------------- ページ切替 ---------------- */
-
 document.addEventListener("click", e=>{
-  if(e.target.dataset.g){
+  const btn = e.target.closest("[data-g]");
+  if(!btn) return;
 
-    document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  // ページ切替
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
 
-    const nextPage = document.getElementById("p"+e.target.dataset.g);
-    nextPage.classList.add("active");
+  const pageNum = btn.dataset.g;
+  const nextPage = document.getElementById("p" + pageNum);
+  nextPage.classList.add("active");
 
-    // ⭐ ここが追加
-    if(e.target.dataset.g === "2"){
-      initPlayerPosition();
-    }
+  // Page2を開いた時だけ初期化
+  if(pageNum === "2"){
+    initPlayerPosition();
+  }
+
+  // ページに応じてBGMを切り替える
+  if(pageNum === "1"){
+    bgmPlay(BGM.title, true);
+  }else if(pageNum === "2"){
+    applyBattleBgm();
+  }else{ // 3〜5
+    bgmPlay(BGM.menu, true);
   }
 });
-
 /* ---------------- ボタン処理 ---------------- */
 
 Ap.onclick = ()=>{ d.A++; ui(); }
@@ -297,47 +383,85 @@ field.addEventListener("touchstart", e=>{
 function gameLoop(){
   if(document.getElementById("p2").classList.contains("active")){
 
-    const dx = targetX - playerX;
-    const dy = targetY - playerY;
-    const distance = Math.sqrt(dx*dx + dy*dy);
+    const dx = targetCX - playerCX;
+    const dy = targetCY - playerCY;
+    const dist = Math.hypot(dx, dy);
 
-    const baseSpeed = 5;
-    const boostSpeed = 7;
-    const speed = (boostFrames > 0) ? boostSpeed : baseSpeed;
-    if(boostFrames > 0) boostFrames--;
+const baseSpeed = 3;
+const boostSpeed = 7;
+const speed = (boostFrames > 0) ? boostSpeed : baseSpeed;
+if(boostFrames > 0) boostFrames--;
 
-    if(distance > speed){
+    if(dist > speed){
       updatePlayerImage("walk");
-      playerX += dx / distance * speed;
-      playerY += dy / distance * speed;
+      playerCX += dx / dist * speed;
+      playerCY += dy / dist * speed;
     }else{
       updatePlayerImage("normal");
-      playerX = targetX;
-      playerY = targetY;
+      playerCX = targetCX;
+      playerCY = targetCY;
     }
 
-    player.style.left = playerX + "px";
-    player.style.top  = playerY + "px";
+    player.style.left = (playerCX - player.offsetWidth/2) + "px";
+    player.style.top  = (playerCY - player.offsetHeight/2) + "px";
   }
   requestAnimationFrame(gameLoop);
 }
-
 /* ---------------- 初期化 ---------------- */
 
 window.addEventListener("load", ()=>{
-  playerX = field.clientWidth / 2;
-  playerY = field.clientHeight * 0.8;
+  playerCX = field.clientWidth / 2;
+  playerCY = field.clientHeight * 0.8;
 
-  targetX = playerX;
-  targetY = playerY;
+  targetCX = playerCX;
+  targetCY = playerCY;
 
-  player.style.left = playerX + "px";
-  player.style.top  = playerY + "px";
+  player.style.left = (playerCX - player.offsetWidth/2) + "px";
+  player.style.top  = (playerCY - player.offsetHeight/2) + "px";
 
   updatePlayerImage("normal");
   ui();
   gameLoop();
 });
+
+// ===== Page4 UI =====
+const bgmBattleSelect = document.getElementById("bgmBattleSelect");
+const bgmToggle = document.getElementById("bgmToggle");
+
+// 保存読み込み
+BGM.battleMode = localStorage.getItem("bgm_battle_mode") || "random";
+bgmBattleSelect.value = BGM.battleMode;
+
+BGM.enabled = (localStorage.getItem("bgm_enabled") ?? "1") === "1";
+bgmToggle.textContent = "BGM: " + (BGM.enabled ? "ON" : "OFF");
+
+// プルダウン変更
+bgmBattleSelect.addEventListener("change", ()=>{
+  BGM.battleMode = bgmBattleSelect.value;
+  localStorage.setItem("bgm_battle_mode", BGM.battleMode);
+
+  // いまPage2なら即反映
+  if(document.getElementById("p2").classList.contains("active")){
+    applyBattleBgm();
+  }
+});
+
+// ON/OFF
+bgmToggle.addEventListener("click", ()=>{
+  BGM.enabled = !BGM.enabled;
+  localStorage.setItem("bgm_enabled", BGM.enabled ? "1" : "0");
+  bgmToggle.textContent = "BGM: " + (BGM.enabled ? "ON" : "OFF");
+
+  if(!BGM.enabled){
+    bgmStop();
+  }else{
+    // 今いるページのBGMを再開
+    if(document.getElementById("p1").classList.contains("active")) bgmPlay(BGM.title, true);
+    else if(document.getElementById("p2").classList.contains("active")) applyBattleBgm();
+    else bgmPlay(BGM.menu, true);
+  }
+});
+
   </script>
 </body>
 </html>
