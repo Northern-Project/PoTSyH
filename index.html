@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="ja">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+ <title>新〇ニスの王〇様　Shoot Your Heart!!</title>
+ <style>
+  body { font-family: sans-serif; height: 100%;overflow: hidden;   /* スマホゲーム向け */
+  margin: 0;
+  padding: 0;}
+  .nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  button {padding: 10px 14px; }
+
+.imgBtn{
+  width:64px; height:64px;
+padding: 20px 24px;
+  margin: 20px 10px;
+  row-gap: 20px;
+border:none;
+  cursor:pointer;
+
+  background-color: transparent;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain; /* 通常ボタンはこれでOK */
+
+  transition:transform .12s ease, filter .12s ease;
+  filter: drop-shadow(0 8px 14px rgba(0,0,0,.45));
+  animation: var(--float), var(--glow), var(--sprite);
+}
+.nav1{ background-image:url("assets/ui/btn_1.png"); }  
+.glowBtn{--glow: glow 1.5s infinite alternate;
+}
+.floatBtn{
+  --float: float 2s ease-in-out infinite;
+}
+.spriteBtn{
+  --sprite: sprite 2.4s steps(1) infinite;
+  background-size: 192px 64px; /* 64*3 , 64 */
+}
+
+@keyframes sprite{
+  0%    { background-position:   0px 0; }
+  33.33%{ background-position: -64px 0; }
+  66.66%{ background-position:-128px 0; }
+  100%  { background-position:-128px 0; }
+}
+@keyframes float{
+  0%{ transform: translateY(0px); }
+  50%{ transform: translateY(-8px); }
+  100%{ transform: translateY(0px); }
+}
+
+@keyframes glow{
+  from{
+    filter: drop-shadow(0 8px 14px rgba(0,0,0,.45))
+            drop-shadow(0 0 5px #000000);
+  }
+  to{
+    filter: drop-shadow(0 8px 14px rgba(0,0,0,.45))
+            drop-shadow(0 0 20px #000000);
+  }
+}
+#p1{ background:url("assets/bg/bg_page1.png") center/cover no-repeat; }
+.page{ color:#fff;  min-height: 100vh; background-size: cover; overflow: hidden;  box-sizing: border-box;}
+.page::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,0.35);
+  border-radius:10px;
+  pointer-events:none;
+}
+.page{ position:relative; }
+.page > *{ position:relative; } /* 暗幕より前に出す */  
+.page{ display:none; }
+.active { display: block; }
+
+#field{
+  position: relative;
+  width: 100%;
+  height: 70vh;           /* 画面の70%をゲームエリアに */
+  background: #111;
+  overflow: hidden;
+  touch-action: none;     /* スマホでスクロール防止 */
+}
+
+#player{
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;   /* 主人公をタップしても反応しない */
+}
+ </style>
+</head>
+
+<body>
+
+ <div id="p1" class="page active">
+ <button class="imgBtn nav1 floatBtn glowBtn spriteBtn" data-g="1" aria-label="Page1"></button>
+  <button data-g="2">2</button>
+  <h3>Page1</h3>
+  前回： A=<span id="sA"></span> B=<span id="sB"></span>
+ <button onclick="selectChar('char1')">キャラ1</button>
+<button onclick="selectChar('char2')">キャラ2</button>
+ </div>
+
+ <div id="p2" class="page">
+ <button class="imgBtn nav1 floatBtn glowBtn spriteBtn" data-g="1" aria-label="Page1"></button>
+   <div id="field">
+    <img id="player" src="assets/player/player_normal.png">
+  </div>
+  <button data-g="3">3</button>
+  <button data-g="4">4</button>
+  <button data-g="5">5</button>
+ </div>
+
+ <div id="p3" class="page">
+<button class="imgBtn nav1 floatBtn glowBtn spriteBtn" data-g="1" aria-label="Page1"></button>
+  <button data-g="2">2</button>
+  <button data-g="3">3</button>
+  <button data-g="4">4</button>
+  <button data-g="5">5</button>
+  <h3>Page3</h3>
+  <button id="Ap">A+1</button>
+  <button id="Am">A-1</button>
+  <br><br>
+  <input id="Bin" type="number">
+  <button id="Bok">B反映</button>
+ </div>
+
+ <div id="p4" class="page">
+<button class="imgBtn nav1 floatBtn glowBtn spriteBtn" data-g="1" aria-label="Page1"></button>
+  <button data-g="2">2</button>
+  <button data-g="3">3</button>
+  <button data-g="4">4</button>
+  <button data-g="5">5</button>
+  <h3>Page4</h3>
+  Hello World!
+ </div>
+
+ <div id="p5" class="page">
+<button class="imgBtn nav1 floatBtn glowBtn spriteBtn" data-g="1" aria-label="Page1"></button>
+  <button data-g="2">2</button>
+  <button data-g="3">3</button>
+  <button data-g="4">4</button>
+  <button data-g="5">5</button>
+  <h3>Page5</h3>
+  A=<span id="vA"></span><br>
+  B=<span id="vB"></span>
+ </div>
+
+ <script>
+const field = document.getElementById("field");
+const player = document.getElementById("player");
+
+let d = JSON.parse(localStorage.getItem("save")) || {A:0,B:0};
+
+let currentChar = "char1";
+
+let playerX = 0;
+let playerY = 0;
+let targetX = 0;
+let targetY = 0;
+let boostFrames = 0;
+
+/* ---------------- キャラ切替 ---------------- */
+
+function updatePlayerImage(state){
+  player.src = `assets/player/${currentChar}/${state}.png`;
+}
+
+function selectChar(name){
+  currentChar = name;
+  updatePlayerImage("normal");
+}
+
+/* ---------------- 初期化関数　---------------- */
+
+function initPlayerPosition(){
+
+  playerX = field.clientWidth / 2;
+  playerY = field.clientHeight * 0.8;  // 中央より少し下
+
+  targetX = playerX;
+  targetY = playerY;
+
+  player.style.left = playerX + "px";
+  player.style.top  = playerY + "px";
+}
+
+
+
+
+
+/* ---------------- 移動処理 ---------------- */
+
+function setTarget(x, y){
+
+  const maxX = field.clientWidth - player.offsetWidth;
+  const maxY = field.clientHeight - player.offsetHeight;
+
+  targetX = Math.max(0, Math.min(x - player.offsetWidth / 2, maxX));
+  targetY = Math.max(0, Math.min(y - player.offsetHeight / 2, maxY));
+
+  boostFrames = 8;  // 最初の8フレームだけ速くする（調整OK）
+}
+
+/* ---------------- UI更新 ---------------- */
+
+function ui(){
+  sA.textContent = vA.textContent = d.A;
+  sB.textContent = vB.textContent = d.B;
+  Bin.value = d.B;
+  localStorage.setItem("save", JSON.stringify(d));
+}
+
+/* ---------------- ページ切替 ---------------- */
+
+document.addEventListener("click", e=>{
+  if(e.target.dataset.g){
+
+    document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+
+    const nextPage = document.getElementById("p"+e.target.dataset.g);
+    nextPage.classList.add("active");
+
+    // ⭐ ここが追加
+    if(e.target.dataset.g === "2"){
+      initPlayerPosition();
+    }
+  }
+});
+
+/* ---------------- ボタン処理 ---------------- */
+
+Ap.onclick = ()=>{ d.A++; ui(); }
+Am.onclick = ()=>{ d.A--; ui(); }
+Bok.onclick = ()=>{ d.B = +Bin.value || 0; ui(); }
+
+/* ---------------- フィールド操作 ---------------- */
+let mouseDown = false;
+
+function isP2Active(){
+  return document.getElementById("p2").classList.contains("active");
+}
+
+/* --- マウス --- */
+field.addEventListener("mousedown", ()=>{
+  if(!isP2Active()) return;
+  mouseDown = true;
+});
+
+window.addEventListener("mouseup", ()=>{  // ←フィールド外で離しても止まる
+  mouseDown = false;
+});
+
+field.addEventListener("mousemove", e=>{
+  if(!isP2Active()) return;
+  if(!mouseDown) return;
+
+  const rect = field.getBoundingClientRect();
+  setTarget(e.clientX - rect.left, e.clientY - rect.top);
+});
+
+field.addEventListener("click", e=>{
+  if(!isP2Active()) return;
+
+  const rect = field.getBoundingClientRect();
+  setTarget(e.clientX - rect.left, e.clientY - rect.top);
+});
+
+/* --- スマホ --- */
+field.addEventListener("touchmove", e=>{
+  if(!isP2Active()) return;
+
+  e.preventDefault();
+  const rect = field.getBoundingClientRect();
+  const touch = e.touches[0];
+  setTarget(touch.clientX - rect.left, touch.clientY - rect.top);
+}, { passive:false });
+
+field.addEventListener("touchstart", e=>{
+  if(!isP2Active()) return;
+
+  e.preventDefault();
+  const rect = field.getBoundingClientRect();
+  const touch = e.touches[0];
+  setTarget(touch.clientX - rect.left, touch.clientY - rect.top);
+}, { passive:false });
+
+/* ---------------- ゲームループ ---------------- */
+
+function gameLoop(){
+  if(document.getElementById("p2").classList.contains("active")){
+
+    const dx = targetX - playerX;
+    const dy = targetY - playerY;
+    const distance = Math.sqrt(dx*dx + dy*dy);
+
+    const baseSpeed = 5;
+    const boostSpeed = 7;
+    const speed = (boostFrames > 0) ? boostSpeed : baseSpeed;
+    if(boostFrames > 0) boostFrames--;
+
+    if(distance > speed){
+      updatePlayerImage("walk");
+      playerX += dx / distance * speed;
+      playerY += dy / distance * speed;
+    }else{
+      updatePlayerImage("normal");
+      playerX = targetX;
+      playerY = targetY;
+    }
+
+    player.style.left = playerX + "px";
+    player.style.top  = playerY + "px";
+  }
+  requestAnimationFrame(gameLoop);
+}
+
+/* ---------------- 初期化 ---------------- */
+
+window.addEventListener("load", ()=>{
+  playerX = field.clientWidth / 2;
+  playerY = field.clientHeight * 0.8;
+
+  targetX = playerX;
+  targetY = playerY;
+
+  player.style.left = playerX + "px";
+  player.style.top  = playerY + "px";
+
+  updatePlayerImage("normal");
+  ui();
+  gameLoop();
+});
+  </script>
+</body>
+</html>
