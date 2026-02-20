@@ -1,56 +1,53 @@
 <!doctype html>
 <html lang="ja">
 <head>
- <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1" />
- <title>新〇ニスの王〇様　Shoot Your Heart!!</title>
- <style>
-  body { font-family: sans-serif; height: 100%;overflow: hidden;   /* スマホゲーム向け */
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>新〇ニスの王〇様　Shoot Your Heart!!</title>
+
+<style>
+
+/* =========================
+   Base
+========================= */
+:root{
+  --topbar-h: 72px;      /* JSで実測して上書き */
+  --battlehud-h: 210px;  /* JSで実測して上書き */
+  --skillbar-h: 110px;
+}
+html, body{
+  width: 100%;
+  height: 100%;
   margin: 0;
-  padding: 0;}
-  .nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-  button {padding: 10px 14px; }
-
-.imgBtn{
-  width:64px; height:64px;
-padding: 20px 24px;
-  margin: 20px 10px;
-  row-gap: 20px;
-border:none;
-  cursor:pointer;
-
-  background-color: transparent;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain; /* 通常ボタンはこれでOK */
-
-  transition:transform .12s ease, filter .12s ease;
-  filter: drop-shadow(0 8px 14px rgba(0,0,0,.45));
-  animation: var(--float), var(--glow), var(--sprite);
-}
-.nav1{ background-image:url("assets/ui/btn_1.png"); }  
-.glowBtn{--glow: glow 1.5s infinite alternate;
-}
-.floatBtn{
-  --float: float 2s ease-in-out infinite;
-}
-.spriteBtn{
-  --sprite: sprite 2.4s steps(1) infinite;
-  background-size: 192px 64px; /* 64*3 , 64 */
+  overflow: hidden; /* スクロールで切れるの防止 */
 }
 
-@keyframes sprite{
-  0%    { background-position:   0px 0; }
-  33.33%{ background-position: -64px 0; }
-  66.66%{ background-position:-128px 0; }
-  100%  { background-position:-128px 0; }
+body{
+  background:#050505;
+  display:flex;
+  justify-content:center;
+  align-items:center;
 }
+
+/* 固定キャンバス */
+#app{
+  width:390px;
+  height:844px;
+  position:relative;
+  overflow:hidden;
+  background:#111;
+  transform-origin: 50% 50%;
+}
+button{ padding: 10px 14px; }
+
+/* =========================
+   Animations
+========================= */
 @keyframes float{
   0%{ transform: translateY(0px); }
   50%{ transform: translateY(-8px); }
   100%{ transform: translateY(0px); }
 }
-
 @keyframes glow{
   from{
     filter: drop-shadow(0 8px 14px rgba(0,0,0,.45))
@@ -61,8 +58,75 @@ border:none;
             drop-shadow(0 0 20px #000000);
   }
 }
-#p1{ background:url("assets/bg/bg_page1.png") center/cover no-repeat; }
-.page{ color:#fff;  min-height: 100vh; background-size: cover; overflow: hidden;  box-sizing: border-box;}
+@keyframes sprite{
+  0%   { background-position:    0px 0; }
+  33%  { background-position:-1024px 0; }
+  66%  { background-position:-2048px 0; }
+  100% { background-position:-2048px 0; }
+}
+
+/* =========================
+   Image Buttons (統合版)
+========================= */
+/* 通常の画像ボタン（必要なら使う） */
+.imgBtn{
+  width:64px;
+  height:64px;
+  padding:0;                 /* sprite運用のため paddingは0に統一 */
+  margin: 10px 10px;
+  border:none;
+  cursor:pointer;
+  background-color: transparent;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  transition:transform .12s ease, filter .12s ease;
+  filter: drop-shadow(0 8px 14px rgba(0,0,0,.45));
+  animation: var(--float), var(--glow), var(--sprite);
+}
+
+/* スプライト専用（TopBarなど） */
+.spriteHost{
+  width:64px;
+  height:64px;
+  padding:0;
+  border:none;
+  cursor:pointer;
+  background-color: transparent;
+  background-repeat:no-repeat;
+  animation: var(--float), var(--glow), var(--sprite);
+}
+
+/* float / glow はクラスで付与 */
+.floatBtn{ --float: float 2s ease-in-out infinite; }
+.glowBtn{  --glow:  glow  1.5s infinite alternate; }
+
+/* sprite はクラスで付与 */
+.spriteBtn{
+  background-size:3072px 1024px;
+  --sprite: sprite 1.2s linear infinite;
+}
+
+/* 画像セット例 */
+.nav1{ background-image:url("assets/ui/btn_1.png"); }
+.nav1Sprite{ background-image:url("assets/ui/btn_1.png"); }
+
+/* =========================
+   Pages
+========================= */
+.page{
+  color:#fff;
+  min-height: 100vh;
+  height: 100vh;
+  background-size: cover;
+  overflow: hidden;
+  box-sizing: border-box;
+  position: relative;
+  display:none;
+
+  /* TopBarがあるページは上を空ける（p2だけ例外で消す） */
+  padding-top: calc(env(safe-area-inset-top, 0px) + var(--topbar-h) + 10px);
+}
 .page::before{
   content:"";
   position:absolute;
@@ -71,18 +135,94 @@ border:none;
   border-radius:10px;
   pointer-events:none;
 }
-.page{ position:relative; }
-.page > *{ position:relative; } /* 暗幕より前に出す */  
-.page{ display:none; }
-.active { display: block; }
+.page > *{ position:relative; }
+.active{ display:block; }
 
-#field{
+/* ページ別背景 */
+#p1{
+  background:url("assets/bg/bg_page1.png") center/cover no-repeat;
+  /* Page1は下のtalkArea分を空ける（必要に応じて調整） */
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 170px);
+}
+
+/* Page2はTopBar無しなので上余白を消す */
+#p2{ padding-top: 0 !important; }
+
+/* スキルバーを出すページは下を空ける */
+.page.hasSkillBar{
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--skillbar-h));
+}
+
+/* =========================
+   Home Menu (Page1)
+========================= */
+/* =========================
+   Home Menu (Page1)  縦1列版
+========================= */
+.homeMenu{
+  width: min(60vw, 260px); /* 少し細く */
+ margin: 10px 16px 0 auto; /* 左寄せ */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ボタンを少し小さく */
+.menuCard{
+  border: 1px solid rgba(255,255,255,0.20);
+  background: rgba(0,0,0,0.35);
+  border-radius: 14px;
+  padding: 10px 12px;       /* 小さめ */
+  color: #fff;
+  text-align: right;
+  min-height: 68px;      /* 小さめ */
+  display: grid;
+  gap: 4px;
+}
+
+.menuCard:active{ transform: scale(0.98); }
+
+.menuTitle{
+  font-size: 15px;      /* 少し小さめ */
+  font-weight: 800;
+}
+.menuSub{
+  font-size: 11px;      /* 少し小さめ */
+  opacity: 0.85;
+}
+
+/* Page1のメニューボタンだけ：ホバーで光る（PC） + 押下で光る（スマホ） */
+#p1 .menuCard{
+  transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+}
+
+/* PCのホバー対応：ホバーできる端末だけ適用 */
+@media (hover: hover) and (pointer: fine){
+  #p1 .menuCard:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 0 18px rgba(255,255,255,0.35);
+    filter: brightness(1.08);
+  }
+}
+
+/* スマホ：タップして押してる間（active） */
+#p1 .menuCard:active{
+  transform: translateY(-1px) scale(0.99);
+  box-shadow: 0 0 14px rgba(255,255,255,0.30);
+  filter: brightness(1.06);
+}
+
+
+
+/* =========================
+   Battle Field / Player (Page2)
+========================= */
+/* fieldは「画面高 - HUD - SkillBar」で確保 */
+#p2 #field{
   position: relative;
-  width: 100%;
-  height: 70vh;           /* 画面の70%をゲームエリアに */
-  background: #111;
-  overflow: hidden;
-  touch-action: none;     /* スマホでスクロール防止 */
+  overflow:hidden;
+  margin-top: var(--battlehud-h);
+  height: calc(100vh - var(--battlehud-h) - var(--skillbar-h) - env(safe-area-inset-bottom, 0px));
 }
 
 #player{
@@ -92,105 +232,1161 @@ border:none;
   left: 0;
   top: 0;
   transform:none;
-  pointer-events: none;   /* 主人公をタップしても反応しない */
+  pointer-events: none;
 }
- </style>
+
+/* =========================
+   Talk UI
+========================= */
+.talkBox{
+  margin-top:8px;
+  display:flex;
+  align-items:flex-start;
+  background:rgba(0,0,0,0.6);
+  border-radius:12px;
+  padding:10px;
+}
+.iconWrap{
+  width:110px;
+  height:110px;
+  background:url("assets/ui/icon_bg.png") center/contain no-repeat;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.talkIcon{
+  width:96px;
+  height:96px;
+  object-fit:contain;
+}
+.talkText{
+  flex:1;
+  padding-left:12px;
+  font-size:17px;
+  line-height:1.6;
+  word-break:break-word;
+}
+
+#talkArea{
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 0;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  width: 90%;
+  max-width: 500px;
+  z-index: 99999;
+}
+#talkArea .talkText,
+#talkArea select{ color:#fff; }
+#talkArea select{
+  background: rgba(0,0,0,0.65);
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 10px;
+  padding: 6px 10px;
+}
+
+/* =========================
+   Owned Cards (Page3)
+========================= */
+.cardStrip{
+  width: 90%;
+  max-width: 600px;
+  margin: 10px auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px;
+  background: rgba(0,0,0,0.35);
+  border-radius: 12px;
+  max-height: 50vh;
+}
+.cardItem{
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+}
+.cardItem img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+/* =========================
+   Modal
+========================= */
+.modal.hidden{ display:none; }
+.modal{
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+}
+.modalBg{
+  position:absolute;
+  inset:0;
+  background: rgba(0,0,0,0.65);
+}
+.modalPanel{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform: translate(-50%,-50%);
+  width: min(92vw, 520px);
+  background: rgba(20,20,20,0.95);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 14px;
+  padding: 12px;
+  color: #fff;
+}
+.modalHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.modalTitle{ font-size: 16px; font-weight: 700; }
+.modalClose{
+  font-size: 22px;
+  line-height: 22px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.08);
+  color:#fff;
+}
+.modalBody{ display:flex; gap: 12px; }
+.modalImg{
+  width: 140px;
+  aspect-ratio: 3/4;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.18);
+}
+.modalInfo{
+  flex:1;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+/* =========================
+   Tabs / Mix UI (Page6/7)
+========================= */
+.tabs{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin: 10px 0;
+}
+.tabBtn{
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.35);
+  color:#fff;
+}
+.tabBtn.active{
+  background: rgba(255,255,255,0.92);
+  color:#111;
+  border-color: rgba(255,255,255,0.92);
+}
+.tabHint{
+  opacity:.9;
+  margin: 6px 0 10px;
+  font-size: 14px;
+}
+
+.catSwitch{
+  display:flex;
+  gap:8px;
+  margin: 6px 0 10px;
+}
+.catBtn{
+  flex:1;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.35);
+  color:#fff;
+}
+.catBtn.active{
+  background: rgba(255,255,255,0.92);
+  color:#111;
+  border-color: rgba(255,255,255,0.92);
+}
+
+.pickRow{
+  display:flex;
+  gap:10px;
+  margin: 10px 0;
+}
+.pickBox{
+  flex:1;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 12px;
+  padding: 10px;
+}
+.pickLabel{ font-size: 12px; opacity:.85; margin-bottom:6px; }
+.pickSlot{
+  min-height: 46px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+}
+
+.mixCardGrid{
+  width: 90%;
+  max-width: 600px;
+  margin: 10px auto;
+  display:grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  max-height: 40vh;
+  overflow-y:auto;
+  padding:10px;
+  background: rgba(0,0,0,0.35);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.mixCard{
+  width:100%;
+  aspect-ratio: 3/4;
+  border-radius: 10px;
+  overflow:hidden;
+  border: 2px solid transparent;
+  background: rgba(255,255,255,0.08);
+  cursor:pointer;
+}
+.mixCard img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+.mixCard.selected{
+  border-color: rgba(255,255,255,0.9);
+}
+
+.mixFooter{
+  width: 90%;
+  max-width: 600px;
+  margin: 10px auto 0;
+  display:flex;
+  gap:10px;
+}
+
+.mixOkBtn{
+  flex: 2;
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  font-weight: bold;
+  font-size: 16px;
+}
+.mixOkBtn:disabled{
+  opacity: 0.4;
+  background: rgba(255,255,255,0.08);
+  cursor: not-allowed;
+}
+.mixOkBtn:not(:disabled){
+  box-shadow: 0 0 12px rgba(255,255,255,0.5);
+}
+.mixResetBtn{
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.35);
+  color:#fff;
+}
+
+/* Page7：統一ピック枠 */
+.pickPair{
+  width: 90%;
+  max-width: 600px;
+  margin: 10px auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.pickCard{
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.35);
+  border-radius: 14px;
+  padding: 10px;
+  color: #fff;
+  text-align: left;
+}
+
+.pickCard.active{
+  border-color: rgba(255,255,255,0.92);
+  box-shadow: 0 0 12px rgba(255,255,255,0.25);
+}
+
+.pickCardTop{
+  font-size: 12px;
+  opacity: .9;
+  margin-bottom: 8px;
+}
+
+.pickCardBody{
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;   /* カード比率 */
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  display: grid;
+  place-items: center;
+}
+
+.pickCardImg{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;         /* 未選択時は隠す */
+}
+
+.pickEmpty{
+  opacity: .75;
+  font-size: 12px;
+}
+
+/* Page7：下の操作バー固定 */
+#p7{ padding-bottom: 120px; }
+#p7 .mixFooter{
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+  width: 90%;
+  max-width: 600px;
+  z-index: 100001;
+}
+#p7 .mixCardGrid{ max-height: 36vh; }
+
+/* =========================
+   Top Bar
+========================= */
+.topBar{
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: calc(env(safe-area-inset-top, 0px) + 4px) 10px 4px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  z-index: 100002;
+  pointer-events: none;
+}
+.topBar > *{ pointer-events: auto; }
+
+.topIconBtn{
+  width:64px;
+  height:64px;
+  border:none;
+  background-color:transparent;
+  background-repeat:no-repeat;
+}
+
+/* 左ボタン：ホーム/設定の差し替え */
+.topLeftHome{ background-image:url("assets/ui/icon_home.png") !important; }
+.topLeftConfig{ background-image:url("assets/ui/icon_gear.png") !important; }
+
+.topTitle{
+  text-align: center;
+  font-weight: 800;
+  font-size: 16px;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* TopBar 左上：戻る専用 */
+.topLeftBack{
+  background-image:url("assets/ui/icon_back.png") !important; /* ←好きな画像にしてOK */
+}
+
+.energyBox{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 14px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.18);
+}
+.energyIcon{ width: 18px; height: 18px; object-fit: contain; }
+.energyText{ font-weight: 700; color:#fff; font-size: 14px; }
+
+/* =========================
+   Battle HUD (Page2)
+========================= */
+.battleHud{
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100003;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) 10px 8px;
+  background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0));
+}
+
+.battleHudRow{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.battleHudBtn{
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+}
+
+.battleInfo{
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.battleIconBox{
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.35);
+}
+
+.battleMsg{
+  min-height: 22px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.35);
+  color:#fff;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.battleLv{
+  display:flex;
+  gap:6px;
+  align-items:center;
+  justify-content:center;
+  flex: 1;
+  min-width: 0;
+}
+.battleLv .pill{
+  display:inline-flex;
+  gap:4px;
+  align-items:center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.35);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Bars */
+.battleBars{
+  margin-top: 8px;
+  display: grid;
+  gap: 6px;
+}
+.barRow{
+  display:grid;
+  grid-template-columns: 34px 1fr auto;
+  gap: 8px;
+  align-items:center;
+}
+.barRow2{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: center;
+}
+.miniBar{
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+.barLabel{ font-size: 12px; opacity: .9; }
+.barTrack{
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.15);
+  overflow:hidden;
+}
+.barFill{
+  height: 100%;
+  width: 100%;
+  background: rgba(255,255,255,0.85);
+  transform-origin: left center;
+  transform: scaleX(1);
+}
+.barText{
+  font-size: 12px;
+  opacity: .9;
+  min-width: 54px;
+  text-align:right;
+}
+
+/* =========================
+   Skill Bar (battle)
+========================= */
+.skillBar{
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+  width: min(92vw, 520px);
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  z-index: 100004;
+  padding: 10px;
+  border-radius: 16px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.18);
+}
+
+.skillBtn{
+  flex: 1;
+  height: 72px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.10);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+/* =========================
+   BattleHUD もスマホ幅に合わせる
+========================= */
+
+/* 戦闘メッセージ：普段は隠して、来たときだけカットイン */
+#battleMsg{
+  opacity: 0;
+  transform: translateX(-18px);
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+/* 表示中 */
+#battleMsg.show{
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* もうちょい“切り込む”感じにしたいなら（任意） */
+@keyframes cutinPop{
+  0%   { opacity:0; transform: translateX(-28px) scale(0.98); }
+  60%  { opacity:1; transform: translateX(0)    scale(1.02); }
+  100% { opacity:1; transform: translateX(0)    scale(1.00); }
+}
+#battleMsg.cutin{
+  animation: cutinPop .22s ease-out;
+}
+
+
+/* =========================
+   PCでもスマホ幅で中央表示（スマホ特化）
+========================= */
+
+/* 外側（PCの余白）を暗くする */
+body{
+  background: #050505;
+}
+
+/* =========================
+   FIX: #app基準に統一（PCで切れない/ボタンが効く）
+   ※このブロックは style の一番最後に置く
+========================= */
+
+/* 1) page を window基準(100vh)から #app基準(100%)へ */
+.page{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  min-height:0 !important;     /* 100vhを殺す */
+  margin:0 !important;
+}
+
+/* 2) fixed を全部 #app基準に変更 */
+.topBar,
+.battleHud,
+.skillBar,
+#talkArea,
+.modal,
+#p7 .mixFooter{
+  position:absolute !important;
+}
+
+/* TopBar：#appの上 */
+.topBar{
+  top:0; left:0; right:0;
+}
+
+/* BattleHud：#appの上 */
+.battleHud{
+  top:0; left:0; right:0;
+}
+
+/* Talk：#appの下 */
+#talkArea{
+  left:50%;
+  transform:translateX(-50%);
+  bottom:0;
+  width: calc(100% - 20px);
+  max-width:500px;
+}
+
+/* SkillBar：#appの下 */
+.skillBar{
+  left:50%;
+  transform:translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+  width: calc(100% - 20px);
+  max-width:520px;
+}
+
+/* Modal：#app全体に被せる */
+.modal{
+  inset:0;
+}
+
+/* Page7 footer：#appの下固定 */
+#p7 .mixFooter{
+  left:50%;
+  transform:translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+  width: calc(100% - 20px);
+  max-width:600px;
+}
+
+/* 3) これらは window 基準センタリングの名残なので無効化 */
+#topBar, #talkArea, #skillBar{
+  right:auto !important;
+}
+
+/* 4) field の高さ計算も 100vh ではなく #app基準に */
+#p2 #field{
+  margin-top: 0 !important;
+  position:absolute !important;
+  left:0; right:0;
+  top: var(--battlehud-h);
+  bottom: calc(var(--skillbar-h) + env(safe-area-inset-bottom, 0px));
+  height:auto !important;
+}
+
+</style>
 </head>
 
 <body>
+<div id="app">
+  <!-- Top Bar -->
+  <div id="topBar" class="topBar">
+<button id="topLeftBtn"
+  class="topIconBtn spriteHost nav1Sprite spriteBtn floatBtn glowBtn"
+  aria-label="menu"
+  data-g="1"></button>
 
- <div id="p1" class="page active">
- <button class="imgBtn nav1 floatBtn glowBtn spriteBtn" data-g="1" aria-label="Page1"></button>
-  <button data-g="2">2</button>
-  <h3>Page1</h3>
-  前回： A=<span id="sA"></span> B=<span id="sB"></span>
- <button onclick="selectChar('char1')">キャラ1</button>
-<button onclick="selectChar('char2')">キャラ2</button>
- </div>
-
- <div id="p2" class="page">
- <button class="imgBtn nav1 floatBtn glowBtn spriteBtn" data-g="1" aria-label="Page1"></button>
-   <div id="field">
-    <img id="player" src="assets/player/char1_normal1.png">
-  </div>
-  <button data-g="3">3</button>
-  <button data-g="4">4</button>
-  <button data-g="5">5</button>
- </div>
-
- <div id="p3" class="page">
-<button class="imgBtn nav1 floatBtn glowBtn spriteBtn" data-g="1" aria-label="Page1"></button>
-  <button data-g="2">2</button>
-  <button data-g="3">3</button>
-  <button data-g="4">4</button>
-  <button data-g="5">5</button>
-  <h3>Page3</h3>
-  <button id="Ap">A+1</button>
-  <button id="Am">A-1</button>
-  <br><br>
-  <input id="Bin" type="number">
-  <button id="Bok">B反映</button>
- </div>
-
- <div id="p4" class="page">
-<button class="imgBtn nav1 floatBtn glowBtn spriteBtn" data-g="1" aria-label="Page1"></button>
-<div style="margin-top:12px; padding:12px; border:1px solid #fff; border-radius:10px; max-width:360px;">
-  <h3>Page4</h3>
-
-  <div style="margin:8px 0;">
-    <label for="bgmBattleSelect">Page2 戦闘BGM：</label><br>
-    <select id="bgmBattleSelect">
-      <option value="random">ランダムループ（3曲）</option>
-      <option value="1">1曲目をループ</option>
-      <option value="2">2曲目をループ</option>
-      <option value="3">3曲目をループ</option>
-    </select>
+    <div id="topTitle" class="topTitle">Page Title</div>
+    <div id="energyBox" class="energyBox">
+      <img id="energyIcon" class="energyIcon" src="assets/ui/energy.png" alt="">
+      <div id="energyText" class="energyText">0 / 0</div>
+    </div>
   </div>
 
-  <button id="bgmToggle">BGM: ON</button>
+  <!-- Pages -->
+  <div id="p1" class="page active">
+<div class="homeMenu">
+  <button class="menuCard" data-g="2">
+    <div class="menuTitle">シューティング</div>
+    <div class="menuSub">戦闘へ</div>
+  </button>
+
+  <button class="menuCard" data-g="6">
+    <div class="menuTitle">合成</div>
+    <div class="menuSub">素材を組み合わせ</div>
+  </button>
+
+  <button class="menuCard" data-g="5">
+    <div class="menuTitle">パーティ編成</div>
+    <div class="menuSub">スキル/装備</div>
+  </button>
+
+  <button class="menuCard" data-g="3">
+    <div class="menuTitle">ギャラリー</div>
+    <div class="menuSub">閲覧</div>
+  </button>
 </div>
 
-  <button data-g="2">2</button>
-  <button data-g="3">3</button>
-  <button data-g="4">4</button>
-  <button data-g="5">5</button>
-  <h3>Page4</h3>
-  Hello World!
- </div>
+  </div>
 
- <div id="p5" class="page">
-<button class="imgBtn nav1 floatBtn glowBtn spriteBtn" data-g="1" aria-label="Page1"></button>
-  <button data-g="2">2</button>
-  <button data-g="3">3</button>
-  <button data-g="4">4</button>
-  <button data-g="5">5</button>
-  <h3>Page5</h3>
-  A=<span id="vA"></span><br>
-  B=<span id="vB"></span>
- </div>
+<div id="p2" class="page">
+  <!-- Battle HUD（Page2専用） -->
+  <div id="battleHud" class="battleHud">
+    <div class="battleHudRow">
+      <button id="btnSurrender" class="battleHudBtn">サレンダー</button>
 
- <script>
-const field = document.getElementById("field");
-const player = document.getElementById("player");
+      <div class="battleLv">
+        <span class="pill">Lv <b id="lvNow">1</b></span>
+        <span class="pill">Stage <b id="stageLv">1</b></span>
+      </div>
 
-let d = JSON.parse(localStorage.getItem("save")) || {A:0,B:0};
+      <button id="btnPause" class="battleHudBtn">ポーズ</button>
+    </div>
+
+<div class="battleBars">
+  <!-- HP：1本 -->
+  <div class="barRow">
+    <div class="barLabel">HP</div>
+    <div class="barTrack"><div id="hpFill" class="barFill"></div></div>
+    <div id="hpText" class="barText">100 / 100</div>
+  </div>
+
+  <!-- ★SPとEXP：1行に2本 -->
+  <div class="barRow2">
+    <div class="miniBar">
+      <div class="barLabel">SP</div>
+      <div class="barTrack"><div id="spFill" class="barFill"></div></div>
+      <div id="spText" class="barText">50/50</div>
+    </div>
+
+    <div class="miniBar">
+      <div class="barLabel">EXP</div>
+      <div class="barTrack"><div id="expFill" class="barFill"></div></div>
+      <div id="expText" class="barText">0%</div>
+    </div>
+  </div>
+</div>
+
+
+    <div class="battleInfo">
+      <div class="battleIconBox" id="battleIconBox"></div>
+      <div class="battleMsg" id="battleMsg">戦闘開始！</div>
+    </div>
+  </div>
+
+  <!-- Battle Field -->
+  <div id="field">
+    <img id="player" src="assets/player/char1/normal.png" alt="">
+  </div>
+</div>
+
+
+  <div id="p3" class="page">
+    <div id="cardStrip" class="cardStrip"></div>
+
+    <button id="dbgClear">所持リセット</button>
+    <button id="dbgGive16">デバッグ：16枚付与</button>
+  </div>
+
+  <div id="p4" class="page">
+
+    <div style="margin-top:12px; padding:12px; border:1px solid #fff; border-radius:10px; max-width:360px;">
+      <h3>Page4</h3>
+      <div style="margin:8px 0;">
+        <label for="bgmBattleSelect">Page2 戦闘BGM：</label><br>
+        <select id="bgmBattleSelect">
+          <option value="random">ランダムループ（3曲）</option>
+          <option value="1">1曲目をループ</option>
+          <option value="2">2曲目をループ</option>
+          <option value="3">3曲目をループ</option>
+        </select>
+      </div>
+      <button id="bgmToggle">BGM: ON</button>
+    </div>
+  </div>
+
+  <div id="p5" class="page">
+    <button class="imgBtn nav1 floatBtn glowBtn spriteBtn" data-g="1" aria-label="Page1"></button>
+    <button data-g="2">2</button>
+    <button data-g="3">3</button>
+    <button data-g="4">4</button>
+    <button data-g="5">5</button>
+    <h3>Page5</h3>
+    A=<span id="vA"></span><br>
+    B=<span id="vB"></span>
+  </div>
+
+  <div id="p6" class="page">
+    <div class="tabs">
+      <button class="tabBtn active" data-tab="0">タブ1（1&2）</button>
+      <button class="tabBtn" data-tab="1">タブ2（3&4）</button>
+      <button class="tabBtn" data-tab="2">タブ3（6&7）</button>
+    </div>
+
+    <div class="tabHint" id="tabHint"></div>
+
+    <div style="width:90%;max-width:600px;margin:14px auto;">
+      <button id="p6NextBtn" class="mixOkBtn">次へ（Page7で素材を選ぶ）</button>
+    </div>
+  </div>
+
+  <div id="p7" class="page">
+    <div class="tabHint" id="p7Hint"></div>
+
+<!-- ★統一：カテゴリ枠（タップで切替）＋選択画像表示 -->
+<div class="pickPair">
+  <button id="p7PickA" class="pickCard active" type="button">
+    <div class="pickCardTop" id="p7PickCatA">カテゴリ ?</div>
+    <div class="pickCardBody">
+      <img id="p7PickImgA" class="pickCardImg" alt="" />
+      <div id="p7PickEmptyA" class="pickEmpty">未選択</div>
+    </div>
+  </button>
+
+  <button id="p7PickB" class="pickCard" type="button">
+    <div class="pickCardTop" id="p7PickCatB">カテゴリ ?</div>
+    <div class="pickCardBody">
+      <img id="p7PickImgB" class="pickCardImg" alt="" />
+      <div id="p7PickEmptyB" class="pickEmpty">未選択</div>
+    </div>
+  </button>
+</div>
+
+
+    <div id="p7Grid" class="mixCardGrid"></div>
+
+    <div class="mixFooter">
+      <button id="p7OkBtn" class="mixOkBtn" disabled>OK</button>
+      <button id="p7ResetBtn" class="mixResetBtn">選択リセット</button>
+    </div>
+  </div>
+
+  <div id="p8" class="page">
+    <div id="p8Box" style="width:90%;max-width:600px;margin:10px auto;padding:12px;border:1px solid rgba(255,255,255,0.35);border-radius:12px;background:rgba(0,0,0,0.35);">
+      読み込み中…
+    </div>
+
+    <div style="width:90%;max-width:600px;margin:14px auto;">
+      <button id="p8To1" class="mixOkBtn">Page1へ戻る</button>
+    </div>
+  </div>
+
+  <!-- Talk Area -->
+  <div id="talkArea">
+    <select id="talkCharSelect">
+      <option value="char1">キャラ1</option>
+      <option value="char2">キャラ2</option>
+    </select>
+
+    <div class="talkBox">
+      <div class="iconWrap">
+        <img class="talkIcon" src="assets/icons/char1_normal.png" alt="">
+      </div>
+      <div class="talkText">出撃する？</div>
+    </div>
+  </div>
+
+  <!-- Card Modal -->
+  <div id="cardModal" class="modal hidden">
+    <div class="modalBg" id="cardModalBg"></div>
+    <div class="modalPanel">
+      <div class="modalHeader">
+        <div id="modalTitle" class="modalTitle">CARD</div>
+        <button id="modalClose" class="modalClose">×</button>
+      </div>
+
+      <div class="modalBody">
+        <img id="modalImg" class="modalImg" src="" alt="">
+        <div class="modalInfo">
+          <div><b>カテゴリー</b>：<span id="modalCategory"></span></div>
+          <div><b>No.</b>：<span id="modalNo"></span></div>
+          <div><b>レアリティ</b>：<span id="modalRarity"></span></div>
+          <div><b>属性</b>：<span id="modalAttr"></span></div>
+          <div style="opacity:.8;font-size:12px;margin-top:6px;">ID: <span id="modalId"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- Skill Bar（戦闘用スキルボタン） -->
+<div id="skillBar" class="skillBar" style="display:none;">
+  <button id="skillBtn1" class="skillBtn" aria-label="skill1"></button>
+  <button id="skillBtn2" class="skillBtn" aria-label="skill2"></button>
+  <button id="skillBtn3" class="skillBtn" aria-label="skill3"></button>
+</div>
+</div>
+<!-- シューティングゲーム部分 -->
+<script src="shooter.js"></script>
+
+
+<script>
+/* =========================================================
+  0) keys / defs
+========================================================= */
+const SAVE_KEY = "save";
+const OWN_KEY  = "owned_cards_v1";
+const MIX_RESULT_KEY = "mix_result_v1";
+const BATTLE_SESSION_KEY = "battle_session_v1";
+
+/* 合成ルール（カテゴリペア→結果カテゴリ） */
+const MIX_RULES = {
+  "1+2": "5",
+  "3+4": "6",
+  "5+6": "7",
+};
+
+/* Page6 タブ定義（選ぶのはカテゴリペア） */
+const tabsDef = [
+  { cats: ["1","2"], title: "カテゴリ1 と 2 の合成を行います（次へで素材を選択）" },
+  { cats: ["3","4"], title: "カテゴリ3 と 4 の合成を行います（次へで素材を選択）" },
+  { cats: ["5","6"], title: "カテゴリ5 と 6 の合成を行います（次へで素材を選択）" },
+];
+
+/* 表示制御（ここを触ればOK） */
+const showTalkPages   = new Set(["1","3","4","5","6","8"]);
+const showTopBarPages = new Set(["1","3","4","5","6","7","8"]);
+const showEnergyPages = new Set(["1","3","4","5","6","7","8"]);
+const showSkillPages  = new Set(["2"]);
+
+const TOP_TITLES = {
+  "1": "ホーム",
+  "2": "戦闘",
+  "3": "所持カード",
+  "4": "設定",
+  "5": "確認",
+  "6": "合成カテゴリ選択",
+  "7": "素材選択",
+  "8": "合成結果",
+};
+
+/* =========================================================
+  1) DOM
+========================================================= */
+const $ = (sel) => document.querySelector(sel);
+
+const field = $("#field");
+const player = $("#player");
+
+const talkArea = $("#talkArea");
+const talkCharSelect = $("#talkCharSelect");
+
+const sAEl = $("#sA");
+const sBEl = $("#sB");
+const vAEl = $("#vA");
+const vBEl = $("#vB");
+const binEl = $("#Bin");
+
+const bgmBattleSelect = $("#bgmBattleSelect");
+const bgmToggle = $("#bgmToggle");
+
+const ApBtn = $("#Ap");
+const AmBtn = $("#Am");
+const BokBtn = $("#Bok");
+
+const topBar = $("#topBar");
+const topTitleEl = $("#topTitle");
+const energyBox = $("#energyBox");
+const energyText = $("#energyText");
+
+const p6NextBtn = $("#p6NextBtn");
+
+const p7Hint = $("#p7Hint");
+const p7Grid = $("#p7Grid");
+const p7OkBtn = $("#p7OkBtn");
+const p7ResetBtn = $("#p7ResetBtn");
+const p7BackTo6 = $("#p7BackTo6");
+
+const p7PickA = $("#p7PickA");
+const p7PickB = $("#p7PickB");
+const p7PickCatA = $("#p7PickCatA");
+const p7PickCatB = $("#p7PickCatB");
+const p7PickImgA = $("#p7PickImgA");
+const p7PickImgB = $("#p7PickImgB");
+const p7PickEmptyA = $("#p7PickEmptyA");
+const p7PickEmptyB = $("#p7PickEmptyB");
+
+const skillBar = $("#skillBar");
+
+const battleMsgEl = document.getElementById("battleMsg");
+
+/* =========================================================
+  2) state
+========================================================= */
+let d = JSON.parse(localStorage.getItem(SAVE_KEY)) || {
+  A:0, B:0,
+  energy: 0, energyMax: 100,
+
+  lv: 1,
+  stageLv: 1,
+  hp: 100, hpMax: 100,
+  sp: 50,  spMax: 50,
+  exp: 0,  expNeed: 100
+};
 
 let currentChar = "char1";
 
-let playerX = 0;
-let playerY = 0;
-let targetX = 0;
-let targetY = 0;
-let playerCX = 0, playerCY = 0;   // プレイヤー中心
-let targetCX = 0, targetCY = 0;   // 目標中心
+/* 移動：中心座標 */
+let playerCX = 0, playerCY = 0;
+let targetCX = 0, targetCY = 0;
 let boostFrames = 0;
 
-// ===== BGM Manager =====
+/* 合成：Page6で決めるのは activeTab だけ */
+let activeTab = 0;
+
+/* Page7：カテゴリと選択 */
+let p7Cats = ["1","2"];
+let p7ActiveSide = "A";
+let p7Pick = { a:null, b:null };
+
+/* =========================================================
+  3) talk DB / card DB
+========================================================= */
+const talkDB = {
+  char1:{
+    "1":{ text:"出撃する？", face:"normal" },
+    "3":{ text:"結果発表だよ。お疲れ様", face:"happy" },
+    "4":{ text:"素敵な音楽がいいよね", face:"normal" },
+    "5":{ text:"ボクたちの思い出、保存しておくね", face:"happy" }
+  },
+  char2:{
+    "1":{ text:"出陣だ！", face:"angry" },
+    "3":{ text:"悪くない結果だ。弛まぬ鍛錬の成果だな", face:"normal" },
+    "4":{ text:"雅楽はないのか？", face:"surprised" },
+    "5":{ text:"記録は日々の成長をもたらすな", face:"normal" }
+  },
+};
+
+function z3(n){ return String(n).padStart(3, "0"); }
+function defaultImg(category, id){ return `assets/cards/${id}.png`; }
+
+function createCards(specs){
+  const out = [];
+  for(const s of specs){
+    const from = s.from ?? 1;
+    const to   = s.to;
+    for(let no = from; no <= to; no++){
+      const id = `${s.category}_${z3(no)}`;
+      out.push({
+        id,
+        category: s.category,
+        no,
+        rarity: s.rarity ?? "N",
+        attr: s.attr ?? "NONE",
+        img: defaultImg(s.category, id),
+      });
+    }
+  }
+  return out;
+}
+function overrideCard(cardDB, id, patch){
+  const card = cardDB.find(c => c.id === id);
+  if(!card) return;
+  Object.assign(card, patch);
+}
+
+const cardDB = createCards([
+  { category:"1", from:1, to:14, rarity:"N",   attr:"FIRE" },
+  { category:"2", from:1, to:2,  rarity:"R",   attr:"EARTH" },
+  { category:"3", from:10,to:10, rarity:"SSR", attr:"DARK" },
+  { category:"4", from:1, to:5,  rarity:"UR",  attr:"WATER" },
+  { category:"5", from:1, to:5,  rarity:"R",   attr:"LIGHT" },
+  { category:"6", from:1, to:5,  rarity:"SR",  attr:"WIND"  },
+  { category:"7", from:1, to:3,  rarity:"SSR", attr:"GOLD"  },
+]);
+overrideCard(cardDB, "1_003", { rarity:"SR", attr:"WIND" });
+overrideCard(cardDB, "2_002", { attr:"WATER" });
+
+/* =========================================================
+  4) storage helpers
+========================================================= */
+function loadOwnedSet(){
+  const arr = JSON.parse(localStorage.getItem(OWN_KEY) || "[]");
+  return new Set(arr);
+}
+function saveOwnedSet(set){
+  localStorage.setItem(OWN_KEY, JSON.stringify([...set]));
+}
+
+function loadBattleSession(){
+  return JSON.parse(localStorage.getItem(BATTLE_SESSION_KEY) || "null");
+}
+function saveBattleSession(s){
+  localStorage.setItem(BATTLE_SESSION_KEY, JSON.stringify(s));
+}
+function clearBattleSession(){
+  localStorage.removeItem(BATTLE_SESSION_KEY);
+}
+
+/* =========================================================
+  5) mix core
+========================================================= */
+function sortPair(a, b){
+  const x = String(a), y = String(b);
+  return (x < y) ? [x,y] : [y,x];
+}
+function getMixResultCategory(catA, catB){
+  const [x,y] = sortPair(catA, catB);
+  return MIX_RULES[`${x}+${y}`] || null;
+}
+function pickResultCardId(resultCat){
+  const owned = loadOwnedSet();
+  const list = cardDB
+    .filter(c => String(c.category) === String(resultCat))
+    .sort((a,b)=> a.no - b.no);
+
+  if(list.length === 0) return null;
+
+  const notOwned = list.find(c => !owned.has(c.id));
+  return (notOwned ? notOwned.id : list[0].id);
+}
+function doMixAndGrant(cardA, cardB){
+  if(!cardA || !cardB) return { ok:false, reason:"素材が未選択" };
+
+  const resCat = getMixResultCategory(cardA.category, cardB.category);
+  if(!resCat) return { ok:false, reason:"この組み合わせは合成できません" };
+
+  const resId = pickResultCardId(resCat);
+  if(!resId) return { ok:false, reason:`カテゴリ${resCat}にカードがありません（cardDB未登録）` };
+
+  const owned = loadOwnedSet();
+  owned.add(resId);
+  saveOwnedSet(owned);
+
+  return { ok:true, resultCategory: resCat, resultId: resId };
+}
+
+/* =========================================================
+  6) BGM
+========================================================= */
 const BGM = {
   enabled: true,
   audio: new Audio(),
   currentSrc: "",
-  battleMode: "random", // "random" or "1"/"2"/"3"
+  battleMode: "random",
   battleList: [
     "assets/audio/bgm_battle_01.mp3",
     "assets/audio/bgm_battle_02.mp3",
@@ -199,198 +1395,857 @@ const BGM = {
   title: "assets/audio/bgm_title.mp3",
   menu:  "assets/audio/bgm_menu.mp3",
 };
-
-BGM.audio.volume = 0.5; // 0.0〜1.0 好きに調整
+BGM.audio.volume = 0.5;
 
 function bgmPlay(src, loop=true){
   if(!BGM.enabled) return;
-
   if(BGM.currentSrc !== src){
     BGM.audio.pause();
     BGM.audio.src = src;
     BGM.currentSrc = src;
   }
   BGM.audio.loop = loop;
-
-  // モバイル対策：再生がブロックされる場合があるので catch
-  BGM.audio.play().catch(()=>{ /* 初回ジェスチャーが必要な時は無視 */ });
+  BGM.audio.play().catch(()=>{});
 }
-
-function bgmStop(){
-  BGM.audio.pause();
-}
-
+function bgmStop(){ BGM.audio.pause(); }
 function pickRandomBattle(){
   const i = Math.floor(Math.random() * BGM.battleList.length);
   return BGM.battleList[i];
 }
-
 function applyBattleBgm(){
-  if(BGM.battleMode === "random"){
-    bgmPlay(pickRandomBattle(), false); // endedで次を選ぶ
-  }else{
+  if(BGM.battleMode === "random") bgmPlay(pickRandomBattle(), false);
+  else{
     const idx = Number(BGM.battleMode) - 1;
     bgmPlay(BGM.battleList[idx], true);
   }
 }
-
-// ランダムループ用：曲が終わったら次へ
 BGM.audio.addEventListener("ended", ()=>{
   if(!BGM.enabled) return;
-  if(!document.getElementById("p2").classList.contains("active")) return;
+  if(!isPageActive("2")) return;
   if(BGM.battleMode !== "random") return;
-
   bgmPlay(pickRandomBattle(), false);
 });
 
-
-
-/* ---------------- キャラ切替 ---------------- */
-
-function updatePlayerImage(state){
-  player.src = `assets/player/${currentChar}/${state}.png`;
+/* =========================================================
+  7) small helpers (UI)
+========================================================= */
+function isPageActive(num){
+  return document.getElementById("p"+num)?.classList.contains("active");
+}
+function getActivePageNum(){
+  return document.querySelector(".page.active")?.id.replace("p","") ?? "1";
 }
 
-function selectChar(name){
-  currentChar = name;
-  updatePlayerImage("normal");
+function syncTopBarHeightVar(){
+  const bar = document.getElementById("topBar");
+  if(!bar) return;
+  const h = bar.getBoundingClientRect().height;
+  document.documentElement.style.setProperty("--topbar-h", `${h}px`);
 }
 
-/* ---------------- 初期化関数　---------------- */
+function syncBattleHudHeightVar(){
+  const hud = document.getElementById("battleHud");
+  if(!hud) return;
+  const h = hud.getBoundingClientRect().height;
+  document.documentElement.style.setProperty("--battlehud-h", `${h}px`);
+}
 
-function initPlayerPosition(){
+function setTopBar(pageNum){
+  if(topBar) topBar.style.display = showTopBarPages.has(pageNum) ? "grid" : "none";
+  if(topTitleEl) topTitleEl.textContent = TOP_TITLES[String(pageNum)] ?? "";
+  if(energyBox) energyBox.style.display = showEnergyPages.has(pageNum) ? "flex" : "none";
 
-  playerCX = field.clientWidth / 2;
-  playerCY = field.clientHeight * 0.8;  // 中央より少し下
+  const left = document.getElementById("topLeftBtn");
+  if(left){
+    // まず全部外す（ページごとに付け直す）
+    left.classList.remove("topLeftConfig", "topLeftHome", "topLeftBack");
 
-  targetCX = playerCX;
-  targetCY = playerCY;
+    if(String(pageNum) === "7"){
+      // ★Page7だけ「戻る（Page6へ）」
+      left.classList.add("topLeftBack");
+      left.dataset.g = "6";
+      left.setAttribute("aria-label", "back");
+    }else{
+      // それ以外は従来どおり：Page1では設定、他はホーム
+      const isHome = (String(pageNum) === "1");
+      left.classList.add(isHome ? "topLeftConfig" : "topLeftHome");
+      left.dataset.g = isHome ? "4" : "1";
+      left.setAttribute("aria-label", isHome ? "config" : "home");
+    }
+  }  
 
- player.style.left = (playerCX - player.offsetWidth/2) + "px";
+  syncTopBarHeightVar();
+}
+
+function updateTalk(pageNum){
+  if(!talkArea || !talkCharSelect) return;
+
+  const char = talkCharSelect.value;
+  const key = String(pageNum);
+  const row = talkDB[char]?.[key];
+
+  const talkTextEl = document.querySelector("#talkArea .talkText");
+  const talkIconEl = document.querySelector("#talkArea .talkIcon");
+  if(!talkTextEl || !talkIconEl) return;
+
+  if(!row){
+    talkTextEl.textContent = "";
+    talkIconEl.src = `assets/icons/${char}_normal.png`;
+    return;
+  }
+
+  talkTextEl.textContent = row.text;
+  const face = row.face || "normal";
+  talkIconEl.src = `assets/icons/${char}_${face}.png`;
+}
+
+function updatePlayerImage(mode){
+  if(!player) return;
+  const ch = talkCharSelect?.value || currentChar || "char1";
+  const safeMode = (mode === "walk") ? "walk" : "normal";
+  player.src = `assets/player/${ch}/${safeMode}.png`;
+}
+
+function ui(){
+  if(sAEl) sAEl.textContent = d.A;
+  if(vAEl) vAEl.textContent = d.A;
+  if(sBEl) sBEl.textContent = d.B;
+  if(vBEl) vBEl.textContent = d.B;
+  if(binEl) binEl.value = d.B;
+
+  if(energyText) energyText.textContent = `${d.energy ?? 0} / ${d.energyMax ?? 0}`;
+  localStorage.setItem(SAVE_KEY, JSON.stringify(d));
+}
+
+function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+function setBar(fillEl, ratio){
+  if(!fillEl) return;
+  fillEl.style.transform = `scaleX(${clamp01(ratio)})`;
+}
+
+function updateBattleHud(){
+  const lvNow = document.getElementById("lvNow");
+  const stageLv = document.getElementById("stageLv");
+  if(lvNow) lvNow.textContent = String(d.lv ?? 1);
+  if(stageLv) stageLv.textContent = String(d.stageLv ?? 1);
+
+  const hpFill = document.getElementById("hpFill");
+  const hpText = document.getElementById("hpText");
+  const hp = d.hp ?? 0, hpMax = d.hpMax ?? 1;
+  setBar(hpFill, hp / hpMax);
+  if(hpText) hpText.textContent = `${hp} / ${hpMax}`;
+
+  const spFill = document.getElementById("spFill");
+  const spText = document.getElementById("spText");
+  const sp = d.sp ?? 0, spMax = d.spMax ?? 1;
+  setBar(spFill, sp / spMax);
+  if(spText) spText.textContent = `${sp} / ${spMax}`;
+
+  const expFill = document.getElementById("expFill");
+  const expText = document.getElementById("expText");
+  const exp = d.exp ?? 0, expNeed = d.expNeed ?? 1;
+  const r = exp / expNeed;
+  setBar(expFill, r);
+  if(expText) expText.textContent = `${Math.floor(clamp01(r)*100)}%`;
+}
+
+let __battleMsgTimer = null;
+
+function setBattleMsg(t, ms = 2200){
+  if(!battleMsgEl) return;
+
+  // 空文字なら消す
+  if(!t){
+    battleMsgEl.textContent = "";
+    battleMsgEl.classList.remove("show","cutin");
+    return;
+  }
+
+  battleMsgEl.textContent = t;
+
+  // いったん付け直してアニメを毎回発火
+  battleMsgEl.classList.remove("show","cutin");
+  // 強制的に再計算（これがないと連続でアニメしないことがある）
+  void battleMsgEl.offsetWidth;
+
+  battleMsgEl.classList.add("show","cutin");
+
+  clearTimeout(__battleMsgTimer);
+  __battleMsgTimer = setTimeout(()=>{
+    battleMsgEl.classList.remove("show","cutin");
+  }, ms);
+}
+
+
+function setSkillBtnImages(){
+  const b1 = document.getElementById("skillBtn1");
+  const b2 = document.getElementById("skillBtn2");
+  const b3 = document.getElementById("skillBtn3");
+  if(b1) b1.style.backgroundImage = 'url("assets/ui/skill_1.png")';
+  if(b2) b2.style.backgroundImage = 'url("assets/ui/skill_2.png")';
+  if(b3) b3.style.backgroundImage = 'url("assets/ui/skill_3.png")';
+}
+
+/* =========================================================
+  8) battle session + rewards
+========================================================= */
+function beginBattleSession(){
+  const s = {
+    active: true,
+    startedAt: Date.now(),
+    rewardsEnergy: 0,
+    rewardsCats: [],
+    snapshot: {
+      hp: d.hp, hpMax: d.hpMax,
+      sp: d.sp, spMax: d.spMax,
+      exp: d.exp, expNeed: d.expNeed,
+      lv: d.lv,
+      stageLv: d.stageLv,
+      energyBefore: d.energy
+    }
+  };
+  saveBattleSession(s);
+}
+
+function addPendingReward({ energy=0, cat=null }){
+  const s = loadBattleSession();
+  if(!s || !s.active) return;
+  if(energy) s.rewardsEnergy += energy;
+  if(cat != null) s.rewardsCats.push(String(cat));
+  saveBattleSession(s);
+}
+
+function commitBattleRewards(){
+  const s = loadBattleSession();
+  if(!s || !s.active) return;
+
+  // カード確定
+  for(const cat of (s.rewardsCats || [])){
+    const owned = loadOwnedSet();
+    const list = cardDB
+      .filter(c=> String(c.category)===String(cat))
+      .sort((a,b)=>a.no-b.no);
+    if(list.length===0) continue;
+    const pick = list.find(c=>!owned.has(c.id)) || list[0];
+    owned.add(pick.id);
+    saveOwnedSet(owned);
+  }
+
+  renderOwnedCards();
+  clearBattleSession();
+}
+
+function discardBattleRewards(){
+  clearBattleSession();
+}
+
+/* 「現在の所持energy + 戦闘中のpending」を合算して半減する */
+function applyEnergyHalfIncludingPending(){
+  const s = loadBattleSession();
+  const pending = (s && s.active) ? (s.rewardsEnergy ?? 0) : 0;
+  const base = d.energy ?? 0;
+  const total = base + pending;
+  d.energy = Math.floor(total * 0.5);
+}
+
+/* 戦闘終了：常に半減。報酬（カード）は commitRewards に従う */
+function endBattle(reason, { commitRewards }){
+  applyEnergyHalfIncludingPending();
+
+  if(commitRewards) commitBattleRewards();
+  else discardBattleRewards();
+
+  // 戦闘側の見た目を最低限戻す（HP0保存で詰まない）
+  if((d.hp ?? 0) <= 0){
+    d.hp = d.hpMax ?? 100;
+    d.sp = d.spMax ?? 50;
+  }
+
+  ui();
+  updateBattleHud();
+}
+
+/* 前回中断の処理（起動時だけ） */
+function handleCrashedBattleIfAny(){
+  const s = loadBattleSession();
+  if(!s || !s.active) return;
+
+  const energy = s.rewardsEnergy ?? 0;
+  const cats = s.rewardsCats ?? [];
+  const catText = cats.length ? cats.join(", ") : "なし";
+
+  const ok = confirm(
+    "前回、何らかの理由で戦闘が中断されました。\n" +
+    `報酬：energy +${energy} / カードカテゴリ ${catText}\n` +
+    "受け取りますか？"
+  );
+
+  if(ok){
+    // 受け取る＝「半減」ルールに従う（pending込みで半減）＋カード確定
+    endBattle("crash_resume", { commitRewards: true });
+  }else{
+    discardBattleRewards();
+  }
+}
+
+/* =========================================================
+  9) field movement
+========================================================= */
+function drawPlayer(){
+  if(!player) return;
+  player.style.left = (playerCX - player.offsetWidth/2) + "px";
   player.style.top  = (playerCY - player.offsetHeight/2) + "px";
 }
 
-
-
-
-/* ---------------- 移動処理 ---------------- */
-
+function initPlayerPosition(){
+  if(!field) return;
+  playerCX = field.clientWidth / 2;
+  playerCY = field.clientHeight * 0.8;
+  targetCX = playerCX;
+  targetCY = playerCY;
+  drawPlayer();
+}
 
 function setTarget(x, y){
+  if(!field || !player) return;
   const halfW = player.offsetWidth / 2;
   const halfH = player.offsetHeight / 2;
-  const pad = 8; // 端から8pxは空ける
-  // 中心が行ける範囲（左右上下を同じ条件にする）
-  targetCX = Math.max(halfW, Math.min(x, field.clientWidth  - halfW));
-  targetCY = Math.max(halfH, Math.min(y, field.clientHeight - halfH));
+  const pad = 8;
 
-  boostFrames = 8;  // 最初の8フレームだけ速くする（調整OK）
+  targetCX = Math.max(halfW + pad, Math.min(x, field.clientWidth  - halfW - pad));
+  targetCY = Math.max(halfH + pad, Math.min(y, field.clientHeight - halfH - pad));
+  boostFrames = 8;
 }
 
-/* ---------------- UI更新 ---------------- */
-
-function ui(){
-  sA.textContent = vA.textContent = d.A;
-  sB.textContent = vB.textContent = d.B;
-  Bin.value = d.B;
-  localStorage.setItem("save", JSON.stringify(d));
+function setTargetFromClientXY(clientX, clientY){
+  const rect = field.getBoundingClientRect();
+  setTarget(clientX - rect.left, clientY - rect.top);
 }
 
-document.addEventListener("click", e=>{
-  const btn = e.target.closest("[data-g]");
-  if(!btn) return;
+/* =========================================================
+  10) Page6/7/8 handlers
+========================================================= */
+function onEnterPage6(){
+  const hint = document.getElementById("tabHint");
+  if(hint) hint.textContent = tabsDef[activeTab]?.title ?? "";
+
+  document.querySelectorAll("#p6 .tabBtn").forEach((btn,i)=>{
+    btn.classList.toggle("active", i === activeTab);
+  });
+}
+
+function onEnterPage7(){
+  const def = tabsDef[activeTab] || tabsDef[0];
+  p7Cats = def.cats.slice();
+  p7ActiveSide = "A";
+  p7Pick = { a:null, b:null };
+  renderPage7();
+}
+
+function renderPage7(){
+  const [catA, catB] = p7Cats;
+
+  if(p7Hint) p7Hint.textContent = `カテゴリ ${catA} と ${catB} から各1枚ずつ選んでください`;
+
+  // 上の2枠：カテゴリ名
+  if(p7PickCatA) p7PickCatA.textContent = `カテゴリ ${catA}`;
+  if(p7PickCatB) p7PickCatB.textContent = `カテゴリ ${catB}`;
+
+  // どっち側をいま選んでるか（枠の白枠）
+  if(p7PickA) p7PickA.classList.toggle("active", p7ActiveSide === "A");
+  if(p7PickB) p7PickB.classList.toggle("active", p7ActiveSide === "B");
+
+  // 選択画像表示（カード名は出さない）
+  if(p7PickImgA && p7PickEmptyA){
+    if(p7Pick.a){
+      p7PickImgA.src = p7Pick.a.img;
+      p7PickImgA.style.display = "block";
+      p7PickEmptyA.style.display = "none";
+    }else{
+      p7PickImgA.removeAttribute("src");
+      p7PickImgA.style.display = "none";
+      p7PickEmptyA.style.display = "block";
+    }
+  }
+
+  if(p7PickImgB && p7PickEmptyB){
+    if(p7Pick.b){
+      p7PickImgB.src = p7Pick.b.img;
+      p7PickImgB.style.display = "block";
+      p7PickEmptyB.style.display = "none";
+    }else{
+      p7PickImgB.removeAttribute("src");
+      p7PickImgB.style.display = "none";
+      p7PickEmptyB.style.display = "block";
+    }
+  }
+
+  // 下の一覧：いまアクティブなカテゴリだけ表示
+  if(!p7Grid) return;
+
+  const showCat = (p7ActiveSide === "A") ? catA : catB;
+  const owned = loadOwnedSet();
+  const list = cardDB
+    .filter(c => owned.has(c.id))
+    .filter(c => String(c.category) === String(showCat))
+    .sort((x,y)=> x.no - y.no);
+
+  p7Grid.innerHTML = "";
+
+  if(list.length === 0){
+    p7Grid.innerHTML = `<div style="padding:8px;color:#fff;opacity:.8;">カテゴリ ${showCat} の所持カードがありません</div>`;
+  }else{
+    for(const c of list){
+      const div = document.createElement("div");
+      div.className = "mixCard";
+
+      const selected =
+        (p7Pick.a && p7Pick.a.id === c.id) ||
+        (p7Pick.b && p7Pick.b.id === c.id);
+      if(selected) div.classList.add("selected");
+
+      div.innerHTML = `<img src="${c.img}" alt="">`;
+      div.addEventListener("click", ()=>{
+        if(p7ActiveSide === "A"){
+          p7Pick.a = (p7Pick.a && p7Pick.a.id === c.id) ? null : c;
+        }else{
+          p7Pick.b = (p7Pick.b && p7Pick.b.id === c.id) ? null : c;
+        }
+        renderPage7();
+      });
+
+      p7Grid.appendChild(div);
+    }
+  }
+
+  const canOk = !!(p7Pick.a && p7Pick.b);
+  if(p7OkBtn) p7OkBtn.disabled = !canOk;
+}
+
+function onEnterPage8(){
+  const box = document.getElementById("p8Box");
+  if(!box) return;
+
+  const raw = localStorage.getItem(MIX_RESULT_KEY);
+  if(!raw){
+    box.textContent = "合成結果がありません。Page7から合成してください。";
+    return;
+  }
+
+  const data = JSON.parse(raw);
+  const card = cardDB.find(c => c.id === data.resultId);
+
+  if(!card){
+    box.innerHTML = `
+      <div>結果カードID: <b>${data.resultId}</b></div>
+      <div>（cardDBに見つかりませんでした）</div>
+    `;
+    return;
+  }
+
+  box.innerHTML = `
+    <div style="margin-bottom:8px;opacity:.9;">
+      素材：<b>${data.a}</b> ＋ <b>${data.b}</b>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-start;">
+      <img src="${card.img}" alt="${card.id}" style="width:140px;aspect-ratio:3/4;object-fit:cover;border-radius:12px;border:1px solid rgba(255,255,255,0.18);">
+      <div style="line-height:1.7;">
+        <div><b>獲得</b>：${card.category}-${String(card.no).padStart(3,"0")}</div>
+        <div><b>レアリティ</b>：${card.rarity}</div>
+        <div><b>属性</b>：${card.attr}</div>
+        <div style="opacity:.75;font-size:12px;margin-top:6px;">ID: ${card.id}</div>
+        <div style="margin-top:10px;opacity:.9;">所持に追加済み（自動セーブ）</div>
+      </div>
+    </div>
+  `;
+}
+
+/* =========================================================
+  11) owned render + modal
+========================================================= */
+function renderOwnedCards(){
+  const strip = document.getElementById("cardStrip");
+  if(!strip) return;
+
+  const owned = loadOwnedSet();
+  const list = cardDB
+    .filter(c => owned.has(c.id))
+    .sort((a,b)=> (String(a.category).localeCompare(String(b.category)) || a.no - b.no));
+
+  strip.innerHTML = "";
+
+  if(list.length === 0){
+    strip.innerHTML = `<div style="padding:8px;color:#fff;opacity:.8;">所持カードなし</div>`;
+    return;
+  }
+
+  for(const c of list){
+    const div = document.createElement("div");
+    div.className = "cardItem";
+    div.innerHTML = `<img src="${c.img}" alt="${c.id}">`;
+    div.addEventListener("click", ()=> openCardModal(c));
+    strip.appendChild(div);
+  }
+}
+
+function openCardModal(card){
+  const modal = document.getElementById("cardModal");
+  if(!modal) return;
+
+  document.getElementById("modalTitle").textContent = `${card.category}-${String(card.no).padStart(3,"0")}`;
+  document.getElementById("modalImg").src = card.img;
+  document.getElementById("modalImg").alt = card.id;
+
+  document.getElementById("modalCategory").textContent = card.category;
+  document.getElementById("modalNo").textContent = card.no;
+  document.getElementById("modalRarity").textContent = card.rarity;
+  document.getElementById("modalAttr").textContent = card.attr;
+  document.getElementById("modalId").textContent = card.id;
+
+  modal.classList.remove("hidden");
+}
+function closeCardModal(){
+  const modal = document.getElementById("cardModal");
+  if(!modal) return;
+  modal.classList.add("hidden");
+}
+
+/* =========================================================
+  12) Shooter mount (ONE TIME)
+========================================================= */
+function mountShooterOnce(){
+  if(window.Shooter?._mounted) return;
+  if(!window.Shooter?.mount) return;
+
+  window.Shooter.mount({
+    field: document.getElementById("field"),
+    playerEl: document.getElementById("player"),
+    getPlayerPos: ()=>({ x: playerCX, y: playerCY }),
+    getState: ()=>d,
+    setState: (patchFn)=>{ patchFn(d); ui(); },
+    onMessage: (t)=> setBattleMsg(t),
+    onRequestHudRefresh: ()=> updateBattleHud(),
+    onReward: (payload)=> addPendingReward(payload),
+  });
+
+  // 全滅・帰還など（あなたの shooter.js 側から呼ぶ想定）
+  window.Shooter.onDefeatCallback = ()=>{
+    endBattle("defeat", { commitRewards: true });
+    goToPage("1");
+  };
+
+  window.Shooter.onBossDefeatCallback = ()=>{
+    const next = confirm("ボス撃破！ 次のLVへ進みますか？（キャンセルで帰還して報酬受取）");
+    if(next){
+      d.stageLv = (d.stageLv ?? 1) + 1;
+      d.hp = d.hpMax;
+      d.sp = d.spMax;
+      d.exp = 0;
+      ui(); updateBattleHud();
+      window.Shooter.startStage?.();
+    }else{
+      endBattle("return", { commitRewards: true });
+      goToPage("1");
+    }
+  };
+}
+
+/* =========================================================
+  13) battle enter/leave
+========================================================= */
+function enterBattlePage(){
+  // 戦闘ページ入場時：HUD計測・初期位置
+  syncBattleHudHeightVar();
+  initPlayerPosition();
+  updateBattleHud();
+
+  // セッション開始（毎回新規）
+  beginBattleSession();
+
+  mountShooterOnce();
+
+  // shooter開始
+  window.Shooter?.setPaused?.(false);
+  window.Shooter?.startStage?.();
+}
+
+function leaveBattlePage(){
+  window.Shooter?.stopStage?.();
+}
+
+/* =========================================================
+  14) navigation (single source of truth)
+========================================================= */
+function onTalkCharChanged(){
+  currentChar = talkCharSelect.value;
+  updatePlayerImage("normal");
+  updateTalk(getActivePageNum());
+}
+talkCharSelect?.addEventListener("change", onTalkCharChanged);
+talkCharSelect?.addEventListener("input",  onTalkCharChanged);
+
+function goToPage(pageNum){
+  pageNum = String(pageNum);
+
+  // 同じページは無視（無限ループ/二重処理を避ける）
+if(getActivePageNum() === pageNum){
+  // ★起動直後など「同じページだけどUI初期化したい」ケース用
+  setTopBar(pageNum);
+
+  if(talkArea) talkArea.style.display = showTalkPages.has(pageNum) ? "block" : "none";
+  if(talkCharSelect) talkCharSelect.style.display = (pageNum === "1") ? "block" : "none";
+
+  const showSkill = showSkillPages.has(pageNum);
+  if(skillBar) skillBar.style.display = showSkill ? "flex" : "none";
+
+  const pageEl = document.getElementById("p" + pageNum);
+  if(pageEl) pageEl.classList.toggle("hasSkillBar", showSkill);
+
+  currentChar = talkCharSelect?.value ?? "char1";
+  updatePlayerImage("normal");
+  updateTalk(pageNum);
+
+  // BGMも初期ページに合わせて揃える
+  if(pageNum === "1") bgmPlay(BGM.title, true);
+  else if(pageNum === "2") applyBattleBgm();
+  else bgmPlay(BGM.menu, true);
+
+  // ページ固有
+  if(pageNum === "6") onEnterPage6();
+  if(pageNum === "7") onEnterPage7();
+  if(pageNum === "8") onEnterPage8();
+
+  return;
+}
+
+
+  // 戦闘ページから出る前処理
+  const prev = getActivePageNum();
+  if(prev === "2" && pageNum !== "2"){
+    leaveBattlePage();
+  }
 
   // ページ切替
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById("p" + pageNum)?.classList.add("active");
 
-  const pageNum = btn.dataset.g;
-  const nextPage = document.getElementById("p" + pageNum);
-  nextPage.classList.add("active");
+  // TopBar / Energy
+  setTopBar(pageNum);
 
-  // Page2を開いた時だけ初期化
+  // Talk show/hide
+  if(talkArea) talkArea.style.display = showTalkPages.has(pageNum) ? "block" : "none";
+  if(talkCharSelect) talkCharSelect.style.display = (pageNum === "1") ? "block" : "none";
+
+  // SkillBar show/hide
+  const showSkill = showSkillPages.has(pageNum);
+  if(skillBar) skillBar.style.display = showSkill ? "flex" : "none";
+
+  const pageEl = document.getElementById("p" + pageNum);
+  if(pageEl){
+    pageEl.classList.toggle("hasSkillBar", showSkill);
+  }
+
+  // キャラ反映＆会話更新
+  currentChar = talkCharSelect?.value ?? "char1";
+  updatePlayerImage("normal");
+  updateTalk(pageNum);
+
+  // BGM
+  if(pageNum === "1") bgmPlay(BGM.title, true);
+  else if(pageNum === "2") applyBattleBgm();
+  else bgmPlay(BGM.menu, true);
+
+  // ページ固有処理
+  if(pageNum === "6") onEnterPage6();
+  if(pageNum === "7") onEnterPage7();
+  if(pageNum === "8") onEnterPage8();
+
+  // 戦闘ページ入場処理（最後に）
   if(pageNum === "2"){
-    initPlayerPosition();
+    enterBattlePage();
   }
-
-  // ページに応じてBGMを切り替える
-  if(pageNum === "1"){
-    bgmPlay(BGM.title, true);
-  }else if(pageNum === "2"){
-    applyBattleBgm();
-  }else{ // 3〜5
-    bgmPlay(BGM.menu, true);
-  }
-});
-/* ---------------- ボタン処理 ---------------- */
-
-Ap.onclick = ()=>{ d.A++; ui(); }
-Am.onclick = ()=>{ d.A--; ui(); }
-Bok.onclick = ()=>{ d.B = +Bin.value || 0; ui(); }
-
-/* ---------------- フィールド操作 ---------------- */
-let mouseDown = false;
-
-function isP2Active(){
-  return document.getElementById("p2").classList.contains("active");
 }
 
-/* --- マウス --- */
-field.addEventListener("mousedown", ()=>{
-  if(!isP2Active()) return;
+/* =========================================================
+  15) events (ONE TIME)
+========================================================= */
+/* ナビの二重発火ガード（タップ/クリックのゴーストを潰す） */
+if(!window.__navBound){
+  window.__navBound = true;
+
+  let lastNavAt = 0;
+
+  document.addEventListener("click", (e)=>{
+    const btn = e.target.closest("[data-g]");
+    if(!btn) return;
+
+    const now = performance.now();
+    if(now - lastNavAt < 350) return;
+    lastNavAt = now;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    goToPage(btn.dataset.g);
+  }, true);
+}
+
+/* Page6: タブクリック */
+document.querySelectorAll("#p6 .tabBtn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    activeTab = Number(btn.dataset.tab);
+    onEnterPage6();
+  });
+});
+
+/* Page6: 次へ */
+p6NextBtn?.addEventListener("click", ()=> goToPage("7"));
+
+/* Page7: カテゴリ切替 */
+p7PickA?.addEventListener("click", ()=>{ p7ActiveSide = "A"; renderPage7(); });
+p7PickB?.addEventListener("click", ()=>{ p7ActiveSide = "B"; renderPage7(); });
+
+/* Page7: リセット */
+p7ResetBtn?.addEventListener("click", ()=>{
+  p7Pick = { a:null, b:null };
+  renderPage7();
+});
+
+/* Page7: 戻る */
+p7BackTo6?.addEventListener("click", ()=> goToPage("6"));
+
+/* Page7: OK → 合成 → 保存 → Page8 */
+p7OkBtn?.addEventListener("click", ()=>{
+  if(!(p7Pick.a && p7Pick.b)) return;
+
+  const r = doMixAndGrant(p7Pick.a, p7Pick.b);
+  if(!r.ok){ alert(r.reason); return; }
+
+  const payload = {
+    tab: activeTab,
+    cats: p7Cats,
+    a: p7Pick.a.id,
+    b: p7Pick.b.id,
+    resultCategory: r.resultCategory,
+    resultId: r.resultId,
+    savedAt: Date.now()
+  };
+  localStorage.setItem(MIX_RESULT_KEY, JSON.stringify(payload));
+
+  renderOwnedCards();
+  goToPage("8");
+});
+
+/* Page8: Page1へ */
+document.getElementById("p8To1")?.addEventListener("click", ()=> goToPage("1"));
+
+/* modal */
+document.getElementById("cardModalBg")?.addEventListener("click", closeCardModal);
+document.getElementById("modalClose")?.addEventListener("click", closeCardModal);
+
+/* Page3 数値 */
+ApBtn?.addEventListener("click", ()=>{ d.A++; ui(); });
+AmBtn?.addEventListener("click", ()=>{ d.A--; ui(); });
+BokBtn?.addEventListener("click", ()=>{ d.B = +binEl.value || 0; ui(); });
+
+/* 所持デバッグ */
+document.getElementById("dbgClear")?.addEventListener("click", ()=>{
+  localStorage.removeItem(OWN_KEY);
+  renderOwnedCards();
+});
+document.getElementById("dbgGive16")?.addEventListener("click", ()=>{
+  const owned = loadOwnedSet();
+  for(const c of cardDB.slice(0,16)) owned.add(c.id);
+  saveOwnedSet(owned);
+  renderOwnedCards();
+});
+
+/* BGM設定 */
+if(bgmBattleSelect && bgmToggle){
+  BGM.battleMode = localStorage.getItem("bgm_battle_mode") || "random";
+  bgmBattleSelect.value = BGM.battleMode;
+
+  BGM.enabled = (localStorage.getItem("bgm_enabled") ?? "1") === "1";
+  bgmToggle.textContent = "BGM: " + (BGM.enabled ? "ON" : "OFF");
+
+  bgmBattleSelect.addEventListener("change", ()=>{
+    BGM.battleMode = bgmBattleSelect.value;
+    localStorage.setItem("bgm_battle_mode", BGM.battleMode);
+    if(isPageActive("2")) applyBattleBgm();
+  });
+
+  bgmToggle.addEventListener("click", ()=>{
+    BGM.enabled = !BGM.enabled;
+    localStorage.setItem("bgm_enabled", BGM.enabled ? "1" : "0");
+    bgmToggle.textContent = "BGM: " + (BGM.enabled ? "ON" : "OFF");
+
+    if(!BGM.enabled) bgmStop();
+    else{
+      const p = getActivePageNum();
+      if(p === "1") bgmPlay(BGM.title, true);
+      else if(p === "2") applyBattleBgm();
+      else bgmPlay(BGM.menu, true);
+    }
+  });
+}
+
+/* 戦闘HUDボタン */
+document.getElementById("btnSurrender")?.addEventListener("click", ()=>{
+  endBattle("surrender", { commitRewards: true });
+  setBattleMsg("撤退…！（エナジー半減）");
+  goToPage("1");
+});
+
+document.getElementById("btnPause")?.addEventListener("click", ()=>{
+  const next = !(window.Shooter?.isPaused?.() ?? false);
+  window.Shooter?.setPaused?.(next);
+  setBattleMsg(next ? "ポーズ中" : "再開！");
+});
+
+/* field input */
+let mouseDown = false;
+
+field?.addEventListener("mousedown", ()=>{
+  if(!isPageActive("2")) return;
   mouseDown = true;
 });
+window.addEventListener("mouseup", ()=>{ mouseDown = false; });
 
-window.addEventListener("mouseup", ()=>{  // ←フィールド外で離しても止まる
-  mouseDown = false;
-});
-
-field.addEventListener("mousemove", e=>{
-  if(!isP2Active()) return;
+field?.addEventListener("mousemove", (e)=>{
+  if(!isPageActive("2")) return;
   if(!mouseDown) return;
-
-  const rect = field.getBoundingClientRect();
-  setTarget(e.clientX - rect.left, e.clientY - rect.top);
+  setTargetFromClientXY(e.clientX, e.clientY);
+});
+field?.addEventListener("click", (e)=>{
+  if(!isPageActive("2")) return;
+  setTargetFromClientXY(e.clientX, e.clientY);
 });
 
-field.addEventListener("click", e=>{
-  if(!isP2Active()) return;
-
-  const rect = field.getBoundingClientRect();
-  setTarget(e.clientX - rect.left, e.clientY - rect.top);
-});
-
-/* --- スマホ --- */
-field.addEventListener("touchmove", e=>{
-  if(!isP2Active()) return;
-
+field?.addEventListener("touchstart", (e)=>{
+  if(!isPageActive("2")) return;
   e.preventDefault();
-  const rect = field.getBoundingClientRect();
-  const touch = e.touches[0];
-  setTarget(touch.clientX - rect.left, touch.clientY - rect.top);
+  const t = e.touches[0];
+  setTargetFromClientXY(t.clientX, t.clientY);
 }, { passive:false });
 
-field.addEventListener("touchstart", e=>{
-  if(!isP2Active()) return;
-
+field?.addEventListener("touchmove", (e)=>{
+  if(!isPageActive("2")) return;
   e.preventDefault();
-  const rect = field.getBoundingClientRect();
-  const touch = e.touches[0];
-  setTarget(touch.clientX - rect.left, touch.clientY - rect.top);
+  const t = e.touches[0];
+  setTargetFromClientXY(t.clientX, t.clientY);
 }, { passive:false });
 
-/* ---------------- ゲームループ ---------------- */
-
+/* loop */
 function gameLoop(){
-  if(document.getElementById("p2").classList.contains("active")){
-
+  if(isPageActive("2")){
     const dx = targetCX - playerCX;
     const dy = targetCY - playerCY;
     const dist = Math.hypot(dx, dy);
 
-const baseSpeed = 3;
-const boostSpeed = 7;
-const speed = (boostFrames > 0) ? boostSpeed : baseSpeed;
-if(boostFrames > 0) boostFrames--;
+    const baseSpeed = 3;
+    const boostSpeed = 7;
+    const speed = (boostFrames > 0) ? boostSpeed : baseSpeed;
+    if(boostFrames > 0) boostFrames--;
 
     if(dist > speed){
       updatePlayerImage("walk");
@@ -401,67 +2256,45 @@ if(boostFrames > 0) boostFrames--;
       playerCX = targetCX;
       playerCY = targetCY;
     }
-
-    player.style.left = (playerCX - player.offsetWidth/2) + "px";
-    player.style.top  = (playerCY - player.offsetHeight/2) + "px";
+    drawPlayer();
   }
   requestAnimationFrame(gameLoop);
 }
-/* ---------------- 初期化 ---------------- */
 
+/* =========================================================
+  16) boot
+========================================================= */
 window.addEventListener("load", ()=>{
-  playerCX = field.clientWidth / 2;
-  playerCY = field.clientHeight * 0.8;
+  // 起動時の「中断戦闘」処理（ここだけ）
+  handleCrashedBattleIfAny();
 
-  targetCX = playerCX;
-  targetCY = playerCY;
-
-  player.style.left = (playerCX - player.offsetWidth/2) + "px";
-  player.style.top  = (playerCY - player.offsetHeight/2) + "px";
-
-  updatePlayerImage("normal");
+  renderOwnedCards();
   ui();
+  setSkillBtnImages();
+
+  syncTopBarHeightVar();
+  syncBattleHudHeightVar();
+  window.addEventListener("resize", ()=>{ syncTopBarHeightVar(); syncBattleHudHeightVar(); });
+
+  // 初期ページ（今activeなページ）に合わせてUI/BGM統一
+goToPage("4");
+
   gameLoop();
 });
 
-// ===== Page4 UI =====
-const bgmBattleSelect = document.getElementById("bgmBattleSelect");
-const bgmToggle = document.getElementById("bgmToggle");
+//画面固定
 
-// 保存読み込み
-BGM.battleMode = localStorage.getItem("bgm_battle_mode") || "random";
-bgmBattleSelect.value = BGM.battleMode;
+function fitApp(){
+  const app = document.getElementById("app");
+  const scale = Math.min(
+    window.innerWidth / 390,
+    window.innerHeight / 844
+  );
+  app.style.transform = `scale(${scale})`;
+}
 
-BGM.enabled = (localStorage.getItem("bgm_enabled") ?? "1") === "1";
-bgmToggle.textContent = "BGM: " + (BGM.enabled ? "ON" : "OFF");
-
-// プルダウン変更
-bgmBattleSelect.addEventListener("change", ()=>{
-  BGM.battleMode = bgmBattleSelect.value;
-  localStorage.setItem("bgm_battle_mode", BGM.battleMode);
-
-  // いまPage2なら即反映
-  if(document.getElementById("p2").classList.contains("active")){
-    applyBattleBgm();
-  }
-});
-
-// ON/OFF
-bgmToggle.addEventListener("click", ()=>{
-  BGM.enabled = !BGM.enabled;
-  localStorage.setItem("bgm_enabled", BGM.enabled ? "1" : "0");
-  bgmToggle.textContent = "BGM: " + (BGM.enabled ? "ON" : "OFF");
-
-  if(!BGM.enabled){
-    bgmStop();
-  }else{
-    // 今いるページのBGMを再開
-    if(document.getElementById("p1").classList.contains("active")) bgmPlay(BGM.title, true);
-    else if(document.getElementById("p2").classList.contains("active")) applyBattleBgm();
-    else bgmPlay(BGM.menu, true);
-  }
-});
-
-  </script>
+window.addEventListener("resize", fitApp);
+window.addEventListener("load", fitApp);
+</script>
 </body>
 </html>
